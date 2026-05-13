@@ -3,7 +3,7 @@
 A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.com/NousResearch/hermes-agent) (NousResearch, MIT) running on a MacBook, connected over Tailscale to a llama.cpp inference server hosting Qwen3.5-27B and GLM-4.7-Flash. Daily-driver agentic work — no cloud, unlimited tokens, no API caps!
 
 - **Tool-calling accuracy:** 97% (Qwen3.5-27B) / 93% (GLM-4.7-Flash) on ToolCall-15.
-- **Generation speed:** 28–54 tok/s at production context depth.
+- **Generation speed (Flash Attention enabled):** Qwen3.5-27B 28–36 tok/s · GLM-4.7-Flash 63–124 tok/s · measured at production context depth.
 - **Hardware envelope:** dual RTX 3090, $4,282 total rig — also runs on a single 3090 with adjustments.
 
 **Narrative writeup:** [blog post on blog.zacharycangemi.com](https://blog.zacharycangemi.com).
