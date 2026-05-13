@@ -1,0 +1,51 @@
+# Hermes Agent config.yaml — template for local inference
+# Place at: ~/.hermes/config.yaml
+#
+# Adjust base_url and model to match your local inference setup.
+# Every line here was chosen deliberately — see DECISIONS.md for the why behind each.
+
+model:
+  # Exact model name as your llama.cpp endpoint reports it
+  default: "Qwen3.5-27B-UD-Q5_K_XL.gguf"
+
+  # "custom" bypasses cloud providers and talks directly to your endpoint
+  provider: "custom"
+
+  # Your inference server. Replace with your Tailscale IP, LAN IP, or localhost.
+  base_url: "http://<your-inference-host>:8000/v1"
+
+  # Must be set explicitly for custom endpoints (auto-detection doesn't work for Tailscale IPs)
+  # 98304 = 96K, our setup. Adjust to your model's context window.
+  context_length: 98304
+
+compression:
+  # Fire compression at 85% of context_length (default)
+  threshold: 0.85
+
+  # Use the local model to summarize itself rather than a cloud model
+  summary_model: "Qwen3.5-27B-UD-Q5_K_XL.gguf"
+  summary_provider: "main"
+
+display:
+  # Show <think> reasoning traces from thinking models like Qwen3.5
+  show_reasoning: true
+
+streaming:
+  # UX-only — visible token output during generation. No speed impact.
+  enabled: true
+
+approvals:
+  # Never auto-approve dangerous operations
+  mode: "manual"
+
+  # 5 minutes — default of 60s is too short to review complex terminal commands
+  timeout: 300
+
+web:
+  # Tavily native integration — get a free API key at https://tavily.com (1000/mo free tier)
+  # Set TAVILY_API_KEY in ~/.hermes/.env
+  backend: "tavily"
+
+  # Alternatives (not recommended):
+  #   "duckduckgo" — rate-limited, low result quality, deprecated package warnings
+  #   "browser"    — CAPTCHAs block Google and DuckDuckGo; OK for direct site nav

@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# Local secrets (never commit any of these)
+.env
+.env.local
+*.key
+*.pem
+secrets/
+credentials/
+
+# Local-only working files
+scratch/
+WIP/
+*.draft.md
