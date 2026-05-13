@@ -1,6 +1,6 @@
 # Owning Your Agent
 
-A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.com/NousResearch/hermes-agent) (NousResearch, MIT) running on a MacBook, connected over Tailscale to a llama.cpp inference server hosting Qwen3.5-27B and GLM-4.7-Flash. Daily-driver agentic work — no cloud, no metering, no rate caps.
+A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.com/NousResearch/hermes-agent) (NousResearch, MIT) running on a MacBook, connected over Tailscale to a llama.cpp inference server hosting Qwen3.5-27B and GLM-4.7-Flash. Daily-driver agentic work — no cloud, unlimited tokens, no API caps!
 
 - **Tool-calling accuracy:** 97% (Qwen3.5-27B) / 93% (GLM-4.7-Flash) on ToolCall-15.
 - **Generation speed:** 28–54 tok/s at production context depth.
