@@ -15,11 +15,12 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 
 ## The hardware envelope — three real paths
 
-| Path | Hardware | Model | Context | Speed |
-|---|---|---|---|---|
-| **Accessible** | Single RTX 3090 (~$1,050 used) | Qwen3.5-27B Q4_K_XL + q8_0 KV | 32K | ~35–40 t/s |
-| **What we built** | Dual RTX 3090 (~$4,282 full rig) | Qwen3.5-27B + GLM-4.7-Flash (UD-Q5_K_XL) | 96K | 28–54 t/s |
-| **Frontier-class local** | 4× A6000 / multi-GPU clusters ($20K+) | Kimi K2, GLM-5, large MoE | varies | varies |
+| Path | Hardware | Model | Quant | Context | Speed (FA on) |
+|---|---|---|---|---|---|
+| **Accessible** | Single RTX 3090 (~$1,050 used) | Qwen3.5-27B | Q4_K_XL + q8_0 KV | 32K | ~35–40 t/s |
+| **What we built — accuracy** | Dual RTX 3090 (~$4,282 full rig) | Qwen3.5-27B | UD-Q5_K_XL | 96K | 28–36 t/s |
+| **What we built — speed** | Same dual-3090 rig | GLM-4.7-Flash | UD-Q5_K_XL | 32K | 63–124 t/s |
+| **Frontier-class local** | 2× RTX PRO 6000 Blackwell (192 GB) or 4× RTX 5090 (128 GB) — $15–25K rig | Kimi K2, GLM-5, large MoE | varies | varies | varies |
 
 The accessible path is what makes this matter for most readers. A 27B-class agent on a single consumer GPU is the actual Overton-window shift — local agentic work is no longer hobbyist-only.
 
