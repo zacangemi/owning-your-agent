@@ -36,7 +36,7 @@ Claude Code's context compaction is tuned by Anthropic on their own models. Loca
 
 ### Context window ceiling
 
-96K tokens is the practical ceiling on dual 3090s with f16 KV cache and the UD-Q5_K_XL Qwen model. Larger windows are technically possible with KV quantization or smaller models, but every option degrades some property — speed, quality, or the headroom for inference overhead.
+96K tokens is the practical ceiling on dual 3090s with f16 KV cache and the UD-Q5_K_XL Qwen model. Larger windows are technically possible with KV quantization or smaller models, but every option degrades some property — speed, quality, or the headroom for inference overhead. 96k is the sweet spot effectively - less than this: not enough, more than this: kvcahce slowdown will make it unusable from a production POV. 
 
 ### Speed degradation at depth
 
@@ -46,7 +46,7 @@ On GLM-4.7-Flash, the degradation is steeper (Amdahl's Law — see `benchmarks/g
 
 ### Single-GPU constraints — read this before committing to the accessible path
 
-On a single RTX 3090, you're limited to Qwen3.5-27B at Q4_K_XL with q8_0 KV cache and ~32K context. The full agentic loop works — but the 32K window is meaningfully tighter than it sounds, and that affects what kinds of work this path is actually good for.
+On a single RTX 3090, you're limited to Qwen3.5-27B at a lower model quant (ec: Q4_K_XL), possible kvcache quant (q8_0) and smaller context window (ex: ~32K context). The full agentic loop works — but the 32K window is meaningfully tighter than it sounds, and that affects what kinds of work this path is actually good for.
 
 **The math.** Hermes loads about **12K tokens of system prompt at session start**: SOUL.md, tool definitions for all 30 built-in tools, descriptions for all 97 skills, persistent memory contents, and Hermes's own behavioral instructions. That overhead is constant — every conversation starts at ~37% of a 32K window already filled. Compaction fires at 85% of context (~27K on a 32K window), leaving roughly **15K of effective working space** for the actual conversation, tool calls, and file contents.
 
@@ -86,7 +86,7 @@ See `configs/qwen3.5-27b_single/` for the launch script.
 
 ### Reprocessing penalty (Qwen-specific)
 
-Qwen3.5-27B uses a hybrid DeltaNet + attention architecture. The recurrent state cannot be partially restored from checkpoints when the conversation branch changes — this forces full re-evaluation from scratch. In a 50-data-point production session, this triggered 13 full reprocessing events at 60-70 seconds each. Total dead air: ~5.65 minutes over a multi-hour session. GLM doesn't have this problem (pure MLA attention).
+Qwen3.5-27B uses a hybrid DeltaNet + attention architecture. The recurrent state cannot be partially restored from checkpoints when the conversation branch changes — this forces full re-evaluation from scratch. In a 50-data-point production session, this triggered 13 full reprocessing events at 60-70 seconds each. Total dead air: ~5.65 minutes over a multi-hour session. GLM doesn't have this problem (pure MLA attention). Hopefully llama.cpp fixes this issue - it's a tricky one due to the hybrid structure of the LLM itself. 
 
 ---
 
