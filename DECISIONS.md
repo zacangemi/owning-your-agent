@@ -27,12 +27,24 @@ Read time: ~5 minutes.
 
 ### Models we evaluated and ruled out
 
-We evaluated 7+ models across Qwen, Hermes-4.3, Devstral, Mistral Small, GPT-OSS, and GLM families. After narrowing, two additional candidates were eliminated for the reasons below (the two we *kept* and the two we explicitly called out above are detailed in rows 4-7):
+We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, Mistral Small, GPT-OSS, and GLM families. Some we tested directly; others we ruled out at the research stage. Honest accounting below.
+
+**Researched and ruled out (not tested in our setup):**
 
 | Candidate | Why ruled out |
 |---|---|
-| Hermes-4.3-36B | 35→15 t/s degradation across context — dealbreaker for agentic sessions that grow large |
-| Qwen3-Coder-30B-A3B | Was a serious candidate — we tested it in our prior OpenCode validation at 62 t/s with 100% on 16 basic tool calls and junior-mid code quality. Maintainer-confirmed too weak for the harder Hermes-class agentic workloads, though, and small Coder models tend to default to curl/Python fallbacks under tool-call pressure. The speed advantage didn't compensate for the expected quality gap — wouldn't have come close to Qwen3.5-27B's 97% or GLM-4.7-Flash's 93% on ToolCall-15-class benchmarks. Ruled out before running ToolCall-15 against it. |
+| Hermes-4.3-36B | 35→15 t/s degradation across context (verified by community testing — @sudoingX). Dealbreaker for agentic sessions that grow large. |
+| Hermes-4-14B | 14B sits below the documented 27B-dense sweet spot for agentic work. Hermes maintainer confirmed small models default to curl/Python fallbacks under tool-call pressure. Native Hermes tool format was the appeal but didn't outweigh capacity limits. |
+| Devstral Small 2 24B | Mistral's purpose-built agentic coding model — 24B dense, 68% SWE-Bench, native FP8. Required vLLM (which we ruled out for our consumer Ampere + Windows setup — see row 9). No Hermes community working examples at evaluation time. Lower SWE-Bench than Qwen3.5-27B (72.4%). Worth revisiting on native Linux. |
+| Mistral Small (3.x family) | Smaller Mistral models sit in the 14-24B range. Public agentic-tool-calling benchmarks show Qwen3.5-27B scoring higher (e.g., on tau2-bench-class evals). Without a clear differentiator, didn't justify another evaluation cycle on an already-stretched scope. |
+| GPT-OSS variants (20B / 120B) | OpenAI's mid-2025 open-source releases. Two reasons we passed: (1) GPT-OSS-20B sits below the 27B-dense sweet spot, and public agentic-tool-calling benchmarks (tau2-bench, ToolCall-15-class) show weaker performance than Qwen3.5-27B and GLM-4.7-Flash — the GPT-OSS series wasn't trained with the same agentic-tool-calling emphasis as the newer Chinese open-source releases; (2) GPT-OSS-120B requires hardware beyond our dual-3090 envelope. Not selected for either hardware path. |
+
+**Tested but ruled out for production:**
+
+| Candidate | Status | Why ruled out |
+|---|---|---|
+| Qwen3-Coder-30B-A3B | Tested in our prior OpenCode validation: 62 t/s, 100% on 16 basic tool calls, junior-mid code quality | Maintainer-confirmed too weak for harder Hermes-class agentic workloads. Small Coder models default to curl/Python fallbacks under tool-call pressure. Wouldn't have come close to Qwen3.5-27B's 97% or GLM-4.7-Flash's 93% on ToolCall-15-class benchmarks. |
+| Qwen3.5-27B FP8 on vLLM | Tested fully on ToolCall-15: 100% at temp=0 | Same model as our production primary, but 15.5 t/s vs 28.5 t/s on llama.cpp UD-Q5_K_XL — 1.8× slower, plus WSL2 + SSH tunnel + tmux infrastructure complexity. Ruled out for production. See engine row 9 for the full vLLM-vs-llama.cpp story. |
 
 ## Inference Engine
 
@@ -49,45 +61,45 @@ We evaluated 7+ models across Qwen, Hermes-4.3, Devstral, Mistral Small, GPT-OSS
 |---|---|---|---|---|
 | 12 | Model quantization | Unsloth Dynamic Q5_K_XL | UD preserves router (f32) and attention precision; only FFN compressed — exactly where tool calling needs precision | general |
 | 13 | Why not Q8_0 | (alternative considered) | Q8 99.9% vs UD-Q5 99.4% of BF16 — unmeasurable gap; UD-Q5 saves 9.5 GB of VRAM that we use for context window instead | general |
+| 14 | Why not UD-Q4_K_XL | (alternative considered) | UD-Q4_K_XL would save another ~4-6 GB and give an estimated 10-15% speed gain — but we didn't need either: UD-Q5_K_XL already fits comfortably with full attention/router precision preserved (UD keeps router at f32 and attention at high precision at every UD level), and our 21+ GB VRAM headroom at 96K context means we don't need the extra room. Q4 is also documented to potentially affect arithmetic and structured-output reliability in some models — not worth the risk on the accuracy daily driver. **Note:** Q4_K_XL **is** used on the single-GPU accessibility variant where the 24 GB VRAM budget forces it (see `configs/qwen3.5-27b_single/`). | general |
 
 ## KV Cache
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 14 | KV cache quantization | f16 (no quantization) | **No need to quantize — both models on dual GPUs leave 21+ GB VRAM free at 96K context.** This is the dual-card advantage: on a single 3090 you'd be forced to use q8_0 KV cache to fit (see the accessibility-path config). Architecture also keeps the KV cache naturally small: **Qwen3.5-27B is hybrid** — only 16 of 64 layers use full attention (the other 48 are Gated DeltaNet with fixed-size recurrent state, no KV cache); within those 16 attention layers, GQA gives 4 KV heads vs 24 query heads (6× reduction). **GLM-4.7-Flash uses MLA** (Multi-head Latent Attention), which natively compresses K+V into a small latent representation — and **MLA requires f16**: it can't be quantized further without disproportionate quality loss. Combination of model architecture + inference engine + dual-card VRAM budget means quantizing the KV cache would have saved ~2 GB we didn't need, in exchange for a quality variable we didn't want. | hardware-specific |
-| 15 | CPU offloading | None (full GPU) | **Plenty of VRAM headroom on dual GPUs (21+ GB free at 96K context) — no reason to push layers to CPU.** Architecture also matters here: dense 27B models bottleneck on every token if any layers are CPU-offloaded (every token activates every layer); MoE benefits from CPU offload only when active params per token are small enough that the bottleneck doesn't dominate. With our setup, full GPU was the obvious choice — we had the VRAM. | general |
+| 15 | KV cache quantization | f16 (no quantization) | **No need to quantize — both models on dual GPUs leave 21+ GB VRAM free at 96K context.** This is the dual-card advantage: on a single 3090 you'd be forced to use q8_0 KV cache to fit (see the accessibility-path config). Architecture also keeps the KV cache naturally small: **Qwen3.5-27B is hybrid** — only **16 of 64 layers** use full attention (the other 48 are Gated DeltaNet with fixed-size recurrent state, no KV cache); within those 16 attention layers, GQA gives 4 KV heads vs 24 query heads (6× reduction). **GLM-4.7-Flash uses MLA** (Multi-head Latent Attention), which natively compresses K+V into a small latent representation, plus an MLA V-less optimization (K stored, V derived) that further shrinks the cache. **MLA also requires f16** — it can't be quantized further without disproportionate quality loss. Combination of model architecture + inference engine + dual-card VRAM budget means quantizing the KV cache would have saved ~2 GB we didn't need, in exchange for a quality variable we didn't want. | hardware-specific |
+| 16 | CPU offloading | None (full GPU) | **Plenty of VRAM headroom on dual GPUs (21+ GB free at 96K context) — no reason to push layers to CPU.** Architecture also matters here: dense 27B models bottleneck on every token if any layers are CPU-offloaded (every token activates every layer); MoE benefits from CPU offload only when active params per token are small enough that the bottleneck doesn't dominate. With our setup, full GPU was the obvious choice — we had the VRAM. | general |
 
 ## Performance / Stability
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 16 | Flash Attention | Enabled (with safety layers) | 3.5× flatter degradation curve; at 84K context, 28.6 t/s vs 11.0 t/s without FA | general |
-| 17 | FA safety layers | f16 KV + `LLAMA_ATTN_ROT_DISABLE=1` + `-sm layer` | Mitigates open issue #21383 (RTX 3090 + agentic patterns crash path) | hardware-specific |
-| 18 | GPU split — Qwen | Both GPUs, layer split | 20.5 GB model doesn't fit on a single 24 GB 3090 | hardware-specific |
-| 19 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window for clean swapping between accuracy and speed without changing context budget | hardware-specific |
-| 20 | Sampling temperature (Qwen) | temp=0.6 | Qwen-recommended for thinking mode; greedy decoding (temp=0) makes thinking models over-cautious | general |
-| 21 | Sampling temperature (GLM) | temp=0.7, top-p 1.0, min-p 0.01 | GLM-recommended sampling profile; thinking via deepseek reasoning format | general |
-| 22 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget; ~12K Hermes system prompt overhead leaves ~86K working space | hardware-specific |
-| 23 | TDR (Timeout Detection and Recovery) | Disabled (`TdrLevel=0`) | Default 2-second timeout causes Windows-killing cascade on multi-GPU NCCL cleanup | hardware-specific |
+| 17 | Flash Attention | Enabled (with safety layers) | 3.5× flatter degradation curve; at 84K context, 28.6 t/s vs 11.0 t/s without FA | general |
+| 18 | FA safety layers | f16 KV + `LLAMA_ATTN_ROT_DISABLE=1` + `-sm layer` | Mitigates open issue #21383 (RTX 3090 + agentic patterns crash path) | hardware-specific |
+| 19 | GPU split — Qwen | Both GPUs, layer split | 20.5 GB model doesn't fit on a single 24 GB 3090 | hardware-specific |
+| 20 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window for clean swapping between accuracy and speed without changing context budget | hardware-specific |
+| 21 | Sampling temperature (Qwen) | temp=0.6 | Qwen-recommended for thinking mode; greedy decoding (temp=0) makes thinking models over-cautious | general |
+| 22 | Sampling temperature (GLM) | temp=0.7, top-p 1.0, min-p 0.01 | GLM-recommended sampling profile; thinking via deepseek reasoning format | general |
+| 23 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget; ~12K Hermes system prompt overhead leaves ~86K working space | hardware-specific |
+| 24 | TDR (Timeout Detection and Recovery) | Disabled (`TdrLevel=0`) | Default 2-second timeout causes Windows-killing cascade on multi-GPU NCCL cleanup | hardware-specific |
 
 ## Agent Setup
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 24 | System prompt philosophy | Karpathy approach — shape thinking, not tools | SOUL.md = how to think; skills = how to use specific tools; model = which tool to pick | general |
-| 25 | Web search backend | Tavily (native Hermes integration) | DuckDuckGo rate-limited + low quality; browser hits CAPTCHAs; Tavily free tier (1,000/mo) works reliably | general |
-| 26 | Mobile access | Telegram gateway (bot via @BotFather) | 2-minute setup; full Hermes access from anywhere; sovereignty extends past the desk | general |
-| 27 | Approval timeout | 300 seconds (was 60 default) | Long enough to review complex terminal commands without auto-timeout; mode stays manual (no auto-approve) | general |
-| 28 | Streaming | Enabled | UX improvement only — no speed change; visible token output during generation | general |
+| 25 | System prompt philosophy | Karpathy approach — shape thinking, not tools | SOUL.md = how to think; skills = how to use specific tools; model = which tool to pick | general |
+| 26 | Web search backend | Tavily (native Hermes integration) | DuckDuckGo rate-limited + low quality; browser hits CAPTCHAs; Tavily free tier (1,000/mo) works reliably | general |
+| 27 | Mobile access | Telegram gateway (bot via @BotFather) | 2-minute setup; full Hermes access from anywhere; sovereignty extends past the desk | general |
+| 28 | Approval timeout | 300 seconds (was 60 default) | Long enough to review complex terminal commands without auto-timeout; mode stays manual (no auto-approve) | general |
+| 29 | Streaming | Enabled | UX improvement only — no speed change; visible token output during generation | general |
 
 ## Things we did NOT do (and why)
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 29 | No `--cache-reuse` flag | (rejected) | Hybrid DeltaNet architecture cannot do partial KV cache reuse; llama.cpp logs warning and ignores | general |
-| 30 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead | general |
-| 31 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case | general |
-| 32 | No Q4 model quantization on the dual-GPU path | (rejected for accuracy daily driver) | 10-15% speed gain not worth tool-call accuracy risk on the accuracy daily driver. Q4_K_XL only used on the single-GPU accessibility variant where the VRAM constraint forces it. | general |
+| 30 | No `--cache-reuse` flag | (rejected) | Hybrid DeltaNet architecture cannot do partial KV cache reuse; llama.cpp logs warning and ignores | general |
+| 31 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead | general |
+| 32 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case | general |
 | 33 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. Listed for honesty — readers should know this is available even though we don't lean on it. | general |
 
 ---
