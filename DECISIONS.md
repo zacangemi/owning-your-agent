@@ -53,7 +53,7 @@ Read time: ~5 minutes. If you want the full story behind any single decision, th
 | 21 | Flash Attention | Enabled (with safety layers) | 3.5× flatter degradation curve; at 84K context, 28.6 t/s vs 11.0 t/s without FA | general | benchmarks/flash_attention_canary.md |
 | 22 | FA safety layers | f16 KV + `LLAMA_ATTN_ROT_DISABLE=1` + `-sm layer` | Mitigates open issue #21383 (RTX 3090 + agentic patterns crash path) | hardware-specific | benchmarks/flash_attention_canary.md |
 | 23 | GPU split — Qwen | Both GPUs, layer split | 20.5 GB model doesn't fit on a single 24 GB 3090 | hardware-specific | configs/qwen3.5-27b_dual/launch.bat |
-| 24 | GPU split — GLM | Single GPU (`--main-gpu 0`) | 20.2 GB fits on one 3090; avoids 30-50% dense PCIe x8 bifurcation penalty | hardware-specific | configs/glm-4.7-flash/launch.bat |
+| 24 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window so `/model` swaps cleanly between accuracy and speed without changing context budget | hardware-specific | configs/glm-4.7-flash/launch.bat |
 | 25 | Sampling temperature (Qwen) | temp=0.6 | Qwen-recommended for thinking mode; greedy decoding (temp=0) makes thinking models over-cautious | general | benchmarks/toolcall15_leaderboard.md |
 | 26 | Sampling temperature (GLM) | temp=0.7, top-p 1.0, min-p 0.01 | GLM-recommended sampling profile; thinking via deepseek reasoning format | general | configs/glm-4.7-flash/launch.bat |
 | 27 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget; ~12K system prompt overhead leaves ~86K working space | hardware-specific | blog §Act I |

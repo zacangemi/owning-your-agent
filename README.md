@@ -19,10 +19,12 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 |---|---|---|---|---|---|
 | **Accessible** | Single RTX 3090 (~$1,050 used) | Qwen3.5-27B | Q4_K_XL + q8_0 KV | 32K | ~35–40 t/s |
 | **What we built — accuracy** | Dual RTX 3090 (~$4,282 full rig) | Qwen3.5-27B | UD-Q5_K_XL | 96K | 28–36 t/s |
-| **What we built — speed** | Same dual-3090 rig | GLM-4.7-Flash | UD-Q5_K_XL | 32K | 63–124 t/s |
+| **What we built — speed** | Same dual-3090 rig | GLM-4.7-Flash | UD-Q5_K_XL | 96K | 63–124 t/s |
 | **Frontier-class local** | 2× RTX PRO 6000 Blackwell (192 GB) or 4× RTX 5090 (128 GB) — $15–25K rig | Kimi K2, GLM-5, large MoE | varies | varies | varies |
 
 The accessible path is what makes this matter for most readers. A 27B-class agent on a single consumer GPU is the actual Overton-window shift — local agentic work is no longer hobbyist-only.
+
+The two-model split in the dual-3090 path isn't redundancy — it's a deliberate `/model` switching pattern. **GLM-4.7-Flash is dramatically faster** because it's MoE: only ~3B parameters are active per token (out of ~30B total) vs Qwen's full 27B-dense activation. That's a ~9× reduction in fixed per-token compute, which is why GLM hits ~124 t/s on fresh context and Qwen tops out around ~36 t/s. **GLM also degrades faster with context depth** — Amdahl's Law: once the per-token compute is cheap, the context-dependent cost (attention, KV cache reads, memory traffic) becomes a larger proportion of total work sooner. Net result across the full 96K window: GLM is 2.3–3.4× faster than Qwen at every context depth, but the gap narrows as context fills. **We use Qwen for accuracy-critical work** where its `<think>` traces and 5.9× flatter degradation curve matter; **GLM for daily speed** where the 7-point tool-call accuracy gap (97% vs 93%) doesn't show up in normal use. Hermes's `/model` command swaps them live in a session.
 
 ---
 
