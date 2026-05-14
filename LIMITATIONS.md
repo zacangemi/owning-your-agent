@@ -107,16 +107,6 @@ To be explicit about scope:
 
 - You need frontier-class reasoning on long autonomous multi-step tasks → Claude Code or another frontier model.
 - You need 99.9% tool-call reliability for production systems → frontier API.
-- You're not comfortable debugging open-source software → start with a hosted product first; come back when you've used it enough to know what you want.
-- Your work is bound by compliance requirements that prohibit running models on un-audited hardware → don't run locally without legal sign-off.
-- You don't have the patience for the Hermes setup process — it's improving, but it's still rough. The "Hermes Agent is new" framing in the blog post is real.
+- You want rich and accurate tool calling capability ie: internet search, ect. 
 
----
 
-## A note on the trajectory
-
-This document is a snapshot. Every limitation listed above is being actively worked on by someone in the open-source ecosystem. Some of them will close in the next quarter — Hermes shipped two major version bumps between the experiment running and this writeup. Some will persist for longer.
-
-The honest framing: **right now**, the local stack handles ~95% of everyday agentic coding work and falls short on the long-horizon frontier. **A year from now**, that ratio shifts further toward "local handles it." We don't know exactly when each specific limitation falls, but the trajectory is monotonic.
-
-If a limitation in this list matters to your work, check whether it still applies before you act on it — it might already be obsolete.
