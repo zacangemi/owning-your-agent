@@ -7,7 +7,7 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 - **Hardware envelope:** dual RTX 3090, $4,282 total rig — also runs on a single 3090 with adjustments.
 
 **Narrative writeup:** [blog post on blog.zacharycangemi.com](https://blog.zacharycangemi.com).
-**Full decision reasoning:** [`DECISIONS.md`](DECISIONS.md) — 32 decisions, ~5-minute scan.
+**Full decision reasoning:** [`DECISIONS.md`](DECISIONS.md) — 33 decisions, ~5-minute scan.
 **Where this stack falls short:** [`LIMITATIONS.md`](LIMITATIONS.md).
 **How to reproduce:** [`METHODOLOGY.md`](METHODOLOGY.md).
 
