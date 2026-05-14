@@ -2,7 +2,7 @@
 
 Read this before you commit hardware to a path you might regret. This document is the honest assessment of where the local stack falls short of frontier products today.
 
-If you're skimming this for an answer to *"should I use this instead of Claude Code?"* — the answer is *for many everyday agentic coding work, yes; for frontier-class long-horizon reasoning, no.* The rest of this document explains where the line is.
+If you're skimming this for an answer to *"should I use this instead of Claude Code?"* — the answer is *for most everyday agentic coding work, yes; for frontier-class long-horizon reasoning, no.* The rest of this document explains where the line is.
 
 ---
 
@@ -36,7 +36,7 @@ Claude Code's context compaction is tuned by Anthropic on their own models. Loca
 
 ### Context window ceiling
 
-96K tokens is the practical ceiling on dual 3090s with f16 KV cache and the UD-Q5_K_XL Qwen model. Larger windows are technically possible with KV quantization or smaller models, but every option degrades some property — speed, quality, or the headroom for inference overhead. 96k is the sweet spot effectively - less than this: not enough, more than this: kvcahce slowdown will make it unusable from a production POV. 
+96K tokens is the practical ceiling on dual 3090s with f16 KV cache and the UD-Q5_K_XL Qwen model. Larger windows are technically possible with KV quantization or smaller models, but every option degrades some property — speed, quality, or the headroom for inference overhead. Practically, 96K is the sweet spot — anything less and you're constantly bumping against compaction; anything more and KV cache reads start dragging generation speed below production-usable thresholds.
 
 ### Speed degradation at depth
 
@@ -46,7 +46,7 @@ On GLM-4.7-Flash, the degradation is steeper (Amdahl's Law — see `benchmarks/g
 
 ### Single-GPU constraints — read this before committing to the accessible path
 
-On a single RTX 3090, you're limited to Qwen3.5-27B at a lower model quant (ec: Q4_K_XL), possible kvcache quant (q8_0) and smaller context window (ex: ~32K context). The full agentic loop works — but the 32K window is meaningfully tighter than it sounds, and that affects what kinds of work this path is actually good for.
+On a single RTX 3090, you'll trade between model quant, KV cache precision, and context window — there's no single forced configuration. Qwen3.5-27B at UD-Q4_K_XL fits with multiple valid setups: e.g., q8_0 KV cache at ~32K context, or f16 KV cache at ~64K context, depending on what you prioritize. The full agentic loop works in any of these — but tighter context windows are meaningfully more constrained than they sound, and that affects what kinds of work this path is actually good for. The math below uses the 32K configuration as the worked example; the 64K configuration scales proportionally (more headroom, but the same overall pattern).
 
 **The math.** Hermes loads about **12K tokens of system prompt at session start**: SOUL.md, tool definitions for all 30 built-in tools, descriptions for all 97 skills, persistent memory contents, and Hermes's own behavioral instructions. That overhead is constant — every conversation starts at ~37% of a 32K window already filled. Compaction fires at 85% of context (~27K on a 32K window), leaving roughly **15K of effective working space** for the actual conversation, tool calls, and file contents.
 
@@ -107,6 +107,6 @@ To be explicit about scope:
 
 - You need frontier-class reasoning on long autonomous multi-step tasks → Claude Code or another frontier model.
 - You need 99.9% tool-call reliability for production systems → frontier API.
-- You want rich and accurate tool calling capability ie: internet search, ect. 
+- You want a richer tool-calling surface out of the box — e.g., native internet search, vision and image understanding, computer use (clicking around an OS), image generation, sandbox code execution. Frontier products like Claude Code bundle most of these natively. On the local stack you can wire most of them up — Tavily for search, OpenRouter for vision, FAL for image generation, Hermes's built-in `execute_code` for sandboxed Python — but it's piece-by-piece setup, and a few capabilities (computer use, native multi-modal models) effectively only exist in frontier products today.
 
 
