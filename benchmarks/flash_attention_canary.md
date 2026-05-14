@@ -29,7 +29,7 @@ LLAMA_ATTN_ROT_DISABLE=1
 -c 98304
 --port 8001
 ```
-Everything else identical to production config.
+Everything else identical to production config. Port 8001 was used during the canary so the production endpoint on 8000 stayed live for parallel comparison; both production and the published `configs/qwen3.5-27b_dual/launch.bat` now use 8000 (the llama.cpp default).
 
 ### Baseline (FA OFF) — Port 8000 (historical data)
 ```
@@ -203,8 +203,6 @@ the layers that scale quadratically with context and dominate the slowdown at hi
    confirming measurement stability.
 5. **Streaming was enabled** during testing (config change from false to true). No impact
    on generation speed, purely UX improvement.
-
----
 
 ---
 
