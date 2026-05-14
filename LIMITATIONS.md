@@ -48,9 +48,45 @@ On Qwen3.5-27B, generation speed degrades linearly with context: `t/s = 35.12 - 
 
 On GLM-4.7-Flash, the degradation is steeper (Amdahl's Law — see `benchmarks/glm_vs_qwen.md`). GLM at fresh context is ~124 t/s; at 92K context, ~63 t/s. Still faster than Qwen at every context depth in our measurements, but the gap narrows.
 
-### Single-GPU constraints
+### Single-GPU constraints — read this before committing to the accessible path
 
-On a single RTX 3090, you're limited to Qwen3.5-27B at Q4_K_XL with q8_0 KV cache and ~32K context. The full agentic loop works, but you trade context window and some quality (~95%+ tool-calling at the recommended temperature, vs 97% with the dual-GPU UD-Q5 config) for accessibility. See `configs/qwen3.5-27b_single/` for the launch script.
+On a single RTX 3090, you're limited to Qwen3.5-27B at Q4_K_XL with q8_0 KV cache and ~32K context. The full agentic loop works — but the 32K window is meaningfully tighter than it sounds, and that affects what kinds of work this path is actually good for.
+
+**The math.** Hermes loads about **12K tokens of system prompt at session start**: SOUL.md, tool definitions for all 30 built-in tools, descriptions for all 97 skills, persistent memory contents, and Hermes's own behavioral instructions. That overhead is constant — every conversation starts at ~37% of a 32K window already filled. Compaction fires at 85% of context (~27K on a 32K window), leaving roughly **15K of effective working space** for the actual conversation, tool calls, and file contents.
+
+**What 15K of effective space buys you, in practice:**
+
+- ~5-10 rounds of simple tool calls (file read, terminal command, single web search — ~1-2K each)
+- ~3-5 rounds of coding work (read + edit + test + observe + iterate — ~3-5K each)
+- ~1-3 rounds of research with multiple searches (~5-10K each)
+- One large file read (1500+ line log) eats 30-40% of your budget alone
+
+After compaction fires, Hermes summarizes middle turns and drops back to a smaller context — work continues, but conversational fidelity degrades and the model loses some of the earlier reasoning chain.
+
+**Use the single-3090 path for:**
+
+- Single-file edits and focused refactors
+- Q&A and code review on small targets
+- Short tool-call chains where you know what you want and the path is direct
+- Narrow targeted automation (cron jobs, scheduled tasks, one-shot transformations)
+- Mobile access via Telegram for quick agent queries from your phone
+
+**Don't use it for:**
+
+- Multi-file refactors that need the agent to hold many files in working memory
+- Extended debugging sessions where context grows turn after turn
+- Open-ended research that involves many searches with large result sets
+- Sustained pair-programming sessions running hours at a stretch
+
+**Quality tradeoff vs the dual-3090 path:**
+
+- ~95%+ tool-calling at the recommended temperature (vs 97% with UD-Q5_K_XL on dual GPU)
+- Q4_K_XL quantization is more aggressive than UD-Q5_K_XL — measurable quality gap exists in edge cases (long-form generation, complex multi-step reasoning)
+- For ~90% of one-shot agentic tasks, you won't notice the difference
+
+**Bottom line:** the single-3090 path is genuinely useful but it's a different *category* of agent work than the dual-3090 path enables. If your day-to-day involves the "don't use it for" list above, save up for the dual-3090 path or skip straight to frontier-class hardware. If your day-to-day is the "use it for" list, the accessible path will serve you well at a fraction of the cost.
+
+See `configs/qwen3.5-27b_single/` for the launch script.
 
 ### Reprocessing penalty (Qwen-specific)
 
