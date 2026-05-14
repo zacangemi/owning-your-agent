@@ -63,7 +63,7 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 |---|---|---|---|
 | 12 | Model quantization | Unsloth Dynamic Q5_K_XL | UD preserves router (f32) and attention precision; only FFN compressed — exactly where tool calling needs precision |
 | 13 | Why not Q8_0 | (alternative considered) | Q8 99.9% vs UD-Q5 99.4% of BF16 — unmeasurable gap; UD-Q5 saves 9.5 GB of VRAM that we use for context window instead |
-| 14 | Why not UD-Q4_K_XL | (alternative considered) | UD-Q4_K_XL would save another ~4-6 GB and give an estimated 10-15% speed gain — but we didn't need either: UD-Q5_K_XL already fits comfortably with full attention/router precision preserved (UD keeps router at f32 and attention at high precision at every UD level), and our 21+ GB VRAM headroom at 96K context means we don't need the extra room. Q4 is also documented to potentially affect arithmetic and structured-output reliability in some models — not worth the risk on the accuracy daily driver. **Note:** Q4_K_XL **is** used on the single-GPU accessibility variant where the 24 GB VRAM budget forces it (see `configs/qwen3.5-27b_single/`). |
+| 14 | Why not UD-Q4_K_XL | (alternative considered) | UD-Q4_K_XL would save another ~4-6 GB and give an estimated 10-15% speed gain — but we didn't need either: UD-Q5_K_XL already fits comfortably with full attention/router precision preserved (UD keeps router at f32 and attention at high precision at every UD level), and our 21+ GB VRAM headroom at 96K context means we don't need the extra room. Q4 is also documented to potentially affect arithmetic and structured-output reliability in some models — not worth the risk on the accuracy daily driver. Note: Q4_K_XL is used on the single-GPU accessibility variant where the 24 GB VRAM budget forces it (see `configs/qwen3.5-27b_single/`). |
 
 ## KV Cache
 
@@ -96,14 +96,14 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 | 29 | Approval timeout | 300 seconds (was 60 default) | Long enough to review complex terminal commands without auto-timeout; mode stays manual (no auto-approve) |
 | 30 | Streaming | Enabled | UX improvement only — no speed change; visible token output during generation |
 
-## Things we did NOT do (and why)
+## Things we did NOT do
 
 | # | Decision | Choice | Why (one line) |
 |---|---|---|---|
 | 31 | No `--cache-reuse` flag | (rejected) | Hybrid DeltaNet architecture cannot do partial KV cache reuse; llama.cpp logs warning and ignores |
 | 32 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead |
 | 33 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case |
-| 34 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. Listed for honesty — readers should know this is available even though we don't lean on it. |
+| 34 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. |
 
 ---
 
