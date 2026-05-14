@@ -16,7 +16,9 @@ REM      quantized without disproportionate quality loss.
 REM    - Do NOT use --grammar (open issue #19068: infinite loop with tool calling).
 REM    - Dual GPU layer split: ~10-20% PCIe penalty for MoE (vs 30-50% for
 REM      dense). Acceptable cost in exchange for matching Qwen's 96K context
-REM      window — same launch flags, same Hermes config, /model swaps cleanly.
+REM      window — same Hermes context budget across both models means session
+REM      restarts (when you switch from GLM to Qwen for accuracy work, or
+REM      back) don't change the working-space math.
 REM
 REM  Adjust the C:\ paths to match your install locations.
 REM ============================================================
