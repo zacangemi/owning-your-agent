@@ -34,7 +34,7 @@ The two-model split in the dual-3090 path isn't redundancy — it's a deliberate
 
 ```
 .
-├── DECISIONS.md              — every meaningful technical decision + one-line reasoning
+├── DECISIONS.md              — 34 technical decisions + one-line reasoning each
 ├── LIMITATIONS.md            — where this stack falls short of frontier products
 ├── METHODOLOGY.md            — how to reproduce the benchmarks
 ├── benchmarks/
