@@ -4,6 +4,8 @@ Every meaningful technical decision made while building this local agentic stack
 
 **The 27B-dense sweet spot.** This entire stack is built around the empirical finding that 27B-class dense models are the right choice for local agentic tool-calling work. Smaller models (<14B) lack the parameter budget for simultaneous intent understanding + tool selection + parameter generation + restraint, and default to curl/Python fallbacks. Larger models (70B+) have strong priors that override tool-call signals — they "know" the answer and skip the tools. 27B-dense gives you enough capacity for multi-step reasoning without overriding tool use, and it fits on consumer hardware (1-2 RTX 3090s) without aggressive quantization that costs accuracy. Most decisions below follow from this anchor.
 
+**How to read this log.** Each row is tagged `general` (the reasoning ports to any local agentic setup) or `hardware-specific` (calibrated for 2× RTX 3090 / Ryzen 9 7950X3D / 96 GB DDR5-6000). For hardware-specific rows, the *direction* of the decision usually still applies on different hardware — the exact numbers don't. The transferable question to ask on your own rig: *"What does the same reasoning produce given my VRAM, my PCIe topology, my GPU architecture?"*
+
 Read time: ~5 minutes.
 
 ---
@@ -102,15 +104,6 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 | 32 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead | general |
 | 33 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case | general |
 | 34 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. Listed for honesty — readers should know this is available even though we don't lean on it. | general |
-
----
-
-## How to read this log
-
-- **`general` rows** — port to any local agentic setup. Reasoning applies regardless of your hardware.
-- **`hardware-specific` rows** — calibrated for 2× RTX 3090 / Ryzen 9 7950X3D / 96 GB DDR5-6000. If your hardware differs, the *direction* of the decision usually still applies; the exact numbers don't.
-
-For decisions tagged `hardware-specific`, the matching transferable question to ask on your own rig: *"What does the same reasoning produce given my VRAM, my PCIe topology, my GPU architecture?"*
 
 ---
 
