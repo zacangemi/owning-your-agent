@@ -12,7 +12,7 @@ was stale — the underlying bug (llama.cpp #19860) was fixed in PR #19866, incl
 build b8720. Safety layers (f16 KV cache + LLAMA_ATTN_ROT_DISABLE=1) mitigate the
 newer crash path (#21383).
 
-**Result: 3.5x flatter degradation curve. 28.2 t/s at 84K context vs ~11.3 t/s without FA.**
+**Result: ~3.5× flatter degradation curve (3.37× canary, 3.68× production-validated). 28.2 t/s at 84K context vs ~11.3 t/s without FA.**
 
 ---
 
@@ -66,51 +66,6 @@ Baseline formula from prior measurements: `speed = 34.5 - 0.28 * context_in_thou
 | 84,131 | 28.21 | 35.45 | Near-max context (14,173 tok) |
 | 84,131 | 28.19 | 35.47 | Retry at same context |
 | 98,303 | — | — | TRUNCATED (hit max context) |
-
----
-
-## Comparison Chart — FA ON vs FA OFF
-
-```
-Generation Speed (t/s) vs Context Depth
-========================================
-
-  36 |*
-     | *          FA ON (measured)
-  34 |  ****
-     |      ****
-  32 |  o       *****
-     |    o          ****
-  30 |      o            *
-     |        o
-  28 |          o              *  *
-     |            o
-  26 |              o
-     |                o
-  24 |                  o
-     |                    o
-  22 |                      o
-     |                        o
-  20 |                          o
-     |                            o        FA OFF (predicted)
-  18 |                              o
-     |                                o
-  16 |                                  o
-     |                                    o
-  14 |                                      o
-     |                                        o
-  12 |                                          o
-     |                                            o
-  10 |                                              o
-     |                                                o
-   8 |                                                  o
-     |___|___|___|___|___|___|___|___|___|___|___|___|___
-     0   8  16  24  32  40  48  56  64  72  80  88  96
-                    Context (thousands of tokens)
-
-  * = Flash Attention ON (measured)
-  o = Flash Attention OFF (baseline formula: 34.5 - 0.28K)
-```
 
 ---
 
@@ -220,7 +175,7 @@ the layers that scale quadratically with context and dominate the slowdown at hi
 
 ## Production Changes Made
 
-### launch.bat (on cluster at C:\models\qwen3.5-27b-gguf\)
+### llama.cpp launch script
 ```diff
 - echo  Flash Attention: DISABLED (multi-GPU crash bug)
 + echo  Flash Attention: ENABLED (verified 2026-04-11, 3.5x faster at 98K)
@@ -234,10 +189,6 @@ the layers that scale quadratically with context and dominate the slowdown at hi
 + streaming:
 +   enabled: true    (was false)
 ```
-
-### Files on cluster
-- `launch.bat` — updated to FA on, port 8000 (production)
-- `launch_canary_fa.bat` — canary test script, port 8001 (can be removed)
 
 ---
 
@@ -276,25 +227,6 @@ Production (2026-04-13): t/s = 35.12 - 0.076 * K    R² = 0.995
 FA OFF baseline:         t/s = 34.5  - 0.280 * K    R² = ~0.97
 
 Production slope ratio: 3.68x flatter than FA OFF (even better than canary)
-```
-
-### Production Speed Curve (50 data points)
-
-```
-t/s vs Context Depth (production, real agentic workload)
-=========================================================
-
-  36 |**
-  35 |
-  34 |  *****
-  33 |       ****
-  32 |           ***
-  31 |              **
-  30 |                ***
-  29 |                   ************
-  28 |                               ******************
-     |___|___|___|___|___|___|___|___|___|___|
-     0  10  20  30  40  50  60  70  80  90 (K tokens)
 ```
 
 ### Production Data by Context Bucket
@@ -429,7 +361,6 @@ this hardware + model combination:
 | Thread tuning | 1-2% | No — noise |
 | Batch tuning | Prompt eval only | No — doesn't affect generation |
 | Reasoning budget cap | Reduces token volume | No — hurts tool call accuracy |
-| Single GPU (Q4 + q8_0 KV) | ~25-30% total | No — too tight on VRAM, risky |
 
 **The remaining performance characteristics are physics: 27B parameters, consumer
 GPUs, no NVLink. The system is stable, optimized, and production-ready.**
@@ -438,11 +369,4 @@ GPUs, no NVLink. The system is stable, optimized, and production-ready.**
 
 ## Credit
 
-This investigation was prompted by a ChatGPT analysis that correctly identified
-the stale assumption in our config and provided a thorough GitHub issue/PR audit.
-All five cited issues/PRs were independently verified against the actual GitHub
-repositories using `gh` CLI. Zero fabrication detected.
-
-Production validation analysis was cross-referenced with a Codex (ChatGPT) analysis
-of the same server log, which correctly identified prompt reprocessing and token
-volume as the primary remaining latency sources (not generation speed degradation).
+This investigation was prompted by a ChatGPT analysis that flagged the stale config assumption. All five cited llama.cpp issues / PRs were independently verified against the actual GitHub repositories using the `gh` CLI before any config changes were made. Production validation analysis was cross-checked against a separate Codex review of the same server log, which independently identified prompt reprocessing and token volume as the primary remaining latency sources (not generation speed degradation).
