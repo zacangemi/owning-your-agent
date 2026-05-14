@@ -10,9 +10,9 @@ If you're skimming this for an answer to *"should I use this instead of Claude C
 
 ### Long-horizon coherence
 
-Sonnet 4.6 and Opus 4.7 outclass Qwen3.5-27B and GLM-4.7-Flash on tasks past 50K context. The local models start losing the thread on complex multi-step plans — they'll forget constraints from earlier in the conversation, repeat work they've already done, or drift from the original goal. Hermes's compression helps (it summarizes middle turns when context fills), but the underlying model capacity gap is real and measurable.
+We didn't run a controlled head-to-head against Claude Code on identical multi-step tasks, so this is a qualitative observation rather than a benchmarked claim — but in extended sessions, our local models do start losing the thread on complex multi-step plans. They'll forget constraints from earlier in the conversation, repeat work they've already done, or drift from the original goal. Hermes's compression helps (it summarizes middle turns when context fills), but a 27B-class model has less working capacity than the largest frontier offerings. For long autonomous tasks where every constraint from earlier in the session has to be honored, frontier models tend to do better.
 
-If you need Opus-class reasoning on a 6-hour autonomous task across 200K context, run Claude Code. The local stack is not a substitute.
+If you need frontier-class reasoning on long autonomous tasks running across very large context, run Claude Code. The local stack handles most agentic work but isn't a substitute for the largest frontier models on the longest tasks.
 
 ### Tool-call reliability ceiling
 
@@ -21,10 +21,6 @@ If you need Opus-class reasoning on a 6-hour autonomous task across 200K context
 ### Polish layer
 
 Claude Code's UX is tuned. Error messages help you understand what went wrong. Slash commands are discoverable. The agentic loop feels smooth. Hermes is functional but rough in places. Hermes is also shipping features weekly — by the time you read this, both products will be different than they were when this was written.
-
-### Plan mode
-
-Claude Code has a dedicated plan mode where the agent drafts a plan before acting and lets you approve or modify it. Hermes has the `plan` skill — equivalent capability, less polished UX. If you do a lot of long-horizon planning work, Claude Code's plan mode is genuinely better today.
 
 ### Worktree-isolated subagent execution
 
@@ -109,7 +105,7 @@ To be explicit about scope:
 
 ## When you should NOT use this stack
 
-- You need frontier reasoning on tasks longer than 50K context → Claude Code or another frontier model.
+- You need frontier-class reasoning on long autonomous multi-step tasks → Claude Code or another frontier model.
 - You need 99.9% tool-call reliability for production systems → frontier API.
 - You're not comfortable debugging open-source software → start with a hosted product first; come back when you've used it enough to know what you want.
 - Your work is bound by compliance requirements that prohibit running models on un-audited hardware → don't run locally without legal sign-off.
