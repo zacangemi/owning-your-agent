@@ -120,7 +120,7 @@ Generation speed degrades linearly with context fill. To measure this on your ha
 4. Plot t/s vs context size in K tokens.
 5. Fit a linear regression: `speed = a - b × K` (K = thousands of tokens).
 
-For Qwen3.5-27B with Flash Attention on, our 50-data-point production session fits: `t/s = 35.12 - 0.076 × K` with R² = 0.995. The matplotlib script that produces the chart is at `scripts/flash_attention_chart.py` (we have it for reference; it lives in the source folder and can be ported).
+For Qwen3.5-27B with Flash Attention on, our 50-data-point production session fits: `t/s = 35.12 - 0.076 × K` with R² = 0.995. The published chart in `benchmarks/flash_attention_comparison.png` was produced from this regression; the formula above is enough to plot your own data on your own hardware.
 
 ## How we measured the Flash Attention impact
 
@@ -155,7 +155,7 @@ A few practices that made these benchmarks usable in practice:
 - **Use `tmux` for any long-running session.** SSH pipe break (laptop sleeping, network drop) can hang multi-GPU NCCL cleanup and freeze the inference server. `tmux` keeps the session alive.
 - **Pin llama.cpp version during a benchmark run.** Builds ship 1-3× per week; mid-experiment updates can change the answers. Note the build number in your results.
 - **Save the server log.** llama.cpp logs `slot print_timing` for every request. Don't trust eyeball measurements — extract from logs.
-- **Verify GPU stability before measuring.** Disable Windows TDR (`TdrLevel=0`) if you're on multi-GPU + WSL2 or you'll lose the server to driver timeouts mid-test. Disable any active background workloads that touch the GPU.
+- **Verify GPU stability before measuring.** Disable any active background workloads that touch the GPU.
 
 ---
 
