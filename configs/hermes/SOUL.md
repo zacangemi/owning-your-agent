@@ -2,7 +2,7 @@
 
 Place at `~/.hermes/SOUL.md`. This is the system prompt that defines who your agent is and how it behaves. It is NOT the place to put tool-routing instructions — those belong in skills.
 
-The principles below are based on the Karpathy approach: shape *how the agent thinks*, not *which tools it uses*. Trust the model's training to pick tools.
+The principles below are based on the Andrej Karpathy approach: shape *how the agent thinks*, not *which tools it uses*. Trust the model's training to pick tools.
 
 ---
 
