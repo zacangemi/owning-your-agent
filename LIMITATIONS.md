@@ -2,7 +2,7 @@
 
 Read this before you commit hardware to a path you might regret. This document is the honest assessment of where the local stack falls short of frontier products today.
 
-If you're skimming this for an answer to *"should I use this instead of Claude Code?"* — the answer is *for most everyday agentic coding work, yes; for frontier-class long-horizon reasoning, no.* The rest of this document explains where the line is.
+If you're skimming this for an answer to *"should I use this instead of Claude Code?"* — the answer is *for many everyday agentic coding work, yes; for frontier-class long-horizon reasoning, no.* The rest of this document explains where the line is.
 
 ---
 
