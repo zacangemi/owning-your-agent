@@ -80,27 +80,28 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 | 20 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window for clean swapping between accuracy and speed without changing context budget | hardware-specific |
 | 21 | Sampling temperature (Qwen) | temp=0.6 | Qwen-recommended for thinking mode; greedy decoding (temp=0) makes thinking models over-cautious | general |
 | 22 | Sampling temperature (GLM) | temp=0.7, top-p 1.0, min-p 0.01 | GLM-recommended sampling profile; thinking via deepseek reasoning format | general |
-| 23 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget; ~12K Hermes system prompt overhead leaves ~86K working space | hardware-specific |
-| 24 | TDR (Timeout Detection and Recovery) | Disabled (`TdrLevel=0`) | Default 2-second timeout causes Windows-killing cascade on multi-GPU NCCL cleanup | hardware-specific |
+| 23 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget. After ~12K Hermes system prompt overhead and the default 85% compaction trigger (~83.5K — see row 24), the working window per session is roughly ~70K tokens before Hermes summarizes middle turns. | hardware-specific |
+| 24 | Hermes auto-compaction threshold | 0.85 (Hermes default — kept) | Hermes auto-compacts at 85% of `context_length` by default. With our 96K window that fires at 98,304 × 0.85 = 83,558 tokens. Hermes then summarizes middle turns into the `summary_model` (we point this at the local model itself — no cloud round-trip), drops context back to a smaller working set, and continues. Configurable via `compression.threshold` in `~/.hermes/config.yaml`; we kept the default. The ~15% headroom between the trigger and the hard context limit gives the agent room to finish its current tool-call round without truncation before compaction kicks in. | general |
+| 25 | TDR (Timeout Detection and Recovery) | Disabled (`TdrLevel=0`) | Default 2-second timeout causes Windows-killing cascade on multi-GPU NCCL cleanup | hardware-specific |
 
 ## Agent Setup
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 25 | System prompt philosophy | Karpathy approach — shape thinking, not tools | SOUL.md = how to think; skills = how to use specific tools; model = which tool to pick | general |
-| 26 | Web search backend | Tavily (native Hermes integration) | DuckDuckGo rate-limited + low quality; browser hits CAPTCHAs; Tavily free tier (1,000/mo) works reliably | general |
-| 27 | Mobile access | Telegram gateway (bot via @BotFather) | 2-minute setup; full Hermes access from anywhere; sovereignty extends past the desk | general |
-| 28 | Approval timeout | 300 seconds (was 60 default) | Long enough to review complex terminal commands without auto-timeout; mode stays manual (no auto-approve) | general |
-| 29 | Streaming | Enabled | UX improvement only — no speed change; visible token output during generation | general |
+| 26 | System prompt philosophy | Karpathy approach — shape thinking, not tools | SOUL.md = how to think; skills = how to use specific tools; model = which tool to pick | general |
+| 27 | Web search backend | Tavily (native Hermes integration) | DuckDuckGo rate-limited + low quality; browser hits CAPTCHAs; Tavily free tier (1,000/mo) works reliably | general |
+| 28 | Mobile access | Telegram gateway (bot via @BotFather) | 2-minute setup; full Hermes access from anywhere; sovereignty extends past the desk | general |
+| 29 | Approval timeout | 300 seconds (was 60 default) | Long enough to review complex terminal commands without auto-timeout; mode stays manual (no auto-approve) | general |
+| 30 | Streaming | Enabled | UX improvement only — no speed change; visible token output during generation | general |
 
 ## Things we did NOT do (and why)
 
 | # | Decision | Choice | Why (one line) | Tag |
 |---|---|---|---|---|
-| 30 | No `--cache-reuse` flag | (rejected) | Hybrid DeltaNet architecture cannot do partial KV cache reuse; llama.cpp logs warning and ignores | general |
-| 31 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead | general |
-| 32 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case | general |
-| 33 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. Listed for honesty — readers should know this is available even though we don't lean on it. | general |
+| 31 | No `--cache-reuse` flag | (rejected) | Hybrid DeltaNet architecture cannot do partial KV cache reuse; llama.cpp logs warning and ignores | general |
+| 32 | No `--grammar` constraints on GLM | (rejected) | Open issue #19068 — infinite loop with tool calling; use `--jinja` autoparser instead | general |
+| 33 | No reasoning budget cap | (rejected) | Thinking traces enable tool-call accuracy; capping them hurts the primary use case | general |
+| 34 | No live `/model` switching during sessions | (offered by Hermes, not used) | Hermes supports live `/model` swapping mid-session; we never used it in production. We restart sessions with the appropriate model for the task instead. Listed for honesty — readers should know this is available even though we don't lean on it. | general |
 
 ---
 
@@ -118,7 +119,6 @@ For decisions tagged `hardware-specific`, the matching transferable question to 
 A few decisions were considered and either deferred, untested, or determined not to matter at the scale of this experiment:
 
 - **Native Linux on Threadripper** — would eliminate most vLLM penalties (no WSL2, no WDDM tax, native FP8 paths). Future build.
-- **NVLink bridge** — would help training significantly; minimal impact on inference at our scale. Not pursued.
 - **Speculative decoding** — not supported for Qwen3.5's hybrid DeltaNet architecture.
 - **Single-GPU Qwen3.5 (Q4 + q8_0 KV)** — would save the second GPU for other work, but tight VRAM headroom and increased risk for marginal performance gain.
 
