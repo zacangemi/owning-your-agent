@@ -57,24 +57,28 @@ The two-model split in the dual-3090 path isn't redundancy — it's a deliberate
 
 ## Quick start
 
-1. **Build llama.cpp from source** with CUDA support. You want build b8720 or newer for the Qwen3.5 thinking-mode tool-call fix (PR #20970) and the multi-GPU Flash Attention fix (PR #19866). Latest stable is fine.
-2. **Download the GGUF models** from Unsloth's Hugging Face:
-   - `Qwen3.5-27B-UD-Q5_K_XL.gguf` — dual-GPU primary
-   - `GLM-4.7-Flash-UD-Q5_K_XL.gguf` — speed alternative
-   - `Qwen3.5-27B-Q4_K_XL.gguf` — optional, for the single-GPU variant
+This setup uses **two machines**: an **inference server** (Windows or Linux with the GPUs) running llama.cpp, and a **client machine** (a Mac, in our setup) running the Hermes Agent — NousResearch's open-source agent application. The Hermes Agent is the *client app* that orchestrates your local LLM into a working agent; it is **not** itself a model. The two machines connect over Tailscale (encrypted mesh VPN, no port forwarding required).
+
+1. **Build llama.cpp from source** (on the inference server) with CUDA support. You want build b8720 or newer for the Qwen3.5 thinking-mode tool-call fix (PR #20970) and the multi-GPU Flash Attention fix (PR #19866). Latest stable is fine.
+2. **Download the GGUF models** from Unsloth's Hugging Face onto the inference server:
+   - [`unsloth/Qwen3.5-27B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-27B-GGUF) — pull `UD-Q5_K_XL` for the dual-GPU primary, or `Q4_K_XL` for the single-GPU accessibility variant
+   - [`unsloth/GLM-4.7-Flash-GGUF`](https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF) — pull `UD-Q5_K_XL` for the speed alternative
 3. **Adjust the `C:\` paths** in `configs/*/launch.bat` to match your install locations (the scripts assume `C:\llama-cpp\` and `C:\models\` — change to wherever you put llama.cpp and your GGUF files).
-4. **Install Hermes Agent** on your client machine:
+4. **Launch the inference server** by running the relevant `.bat` from `configs/`. It listens on port 8000.
+5. **Install the Hermes Agent client app on the Mac** — this is the agent application that connects to your inference server. It is **not** a model; the models stay on the inference server you set up in steps 1-4:
    ```bash
    curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
    ```
-5. **Copy the Hermes config files:**
-   - `configs/hermes/.env.example` → `~/.hermes/.env` (fill in your values — at minimum `TAVILY_API_KEY` and update `OPENAI_BASE_URL`)
+6. **Copy the Hermes config files** to `~/.hermes/` on the Mac:
+   - `configs/hermes/.env.example` → `~/.hermes/.env`, then fill in:
+     - `OPENAI_BASE_URL` — your inference server's address (Tailscale IP, LAN IP, or `localhost`)
+     - `TAVILY_API_KEY` — **enables web browsing for the agent** (lets it search the web during tool calls). Free tier at [tavily.com](https://tavily.com) covers 1,000 searches/month
+     - `TELEGRAM_BOT_TOKEN` (optional) — enables mobile access via a Telegram bot
    - `configs/hermes/config.yaml` → `~/.hermes/config.yaml`
    - `configs/hermes/SOUL.md` → `~/.hermes/SOUL.md`
-6. **Launch your inference server** (run the relevant `.bat` from `configs/`).
-7. **Run `hermes`** from a terminal on your client machine.
+7. **Run `hermes`** from a terminal on the Mac — the agent boots, connects to your inference server, and you're ready.
 
-For Hermes setup details beyond what's here, see the [official Hermes docs](https://hermes-agent.nousresearch.com/docs/).
+For Hermes Agent setup details beyond what's here, see the [official Hermes Agent docs](https://hermes-agent.nousresearch.com/docs/).
 
 ---
 
