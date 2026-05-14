@@ -356,10 +356,6 @@ this hardware + model combination:
 |-------------|--------------|-----------|
 | Flash attention (done) | 2.5-3.5x at deep context | **YES — already applied** |
 | Streaming (done) | UX only, no speed change | **YES — already applied** |
-| Q4 quantization | 10-15% t/s | No — risks tool call quality |
-| KV cache q8_0 | 1-3% t/s | No — imperceptible |
-| Thread tuning | 1-2% | No — noise |
-| Batch tuning | Prompt eval only | No — doesn't affect generation |
 | Reasoning budget cap | Reduces token volume | No — hurts tool call accuracy |
 
 **The remaining performance characteristics are physics: 27B parameters, consumer
