@@ -12,6 +12,10 @@ enabled, both on dual RTX 3090 with 96K context. GLM-4.7-Flash is 2.3-3.4x faste
 than Qwen3.5-27B across the full context range, but degrades more steeply with context
 depth. Qwen scores slightly higher on tool calling accuracy (97% vs 93%).
 
+![GLM-4.7-Flash vs Qwen3.5-27B: generation speed vs context depth on dual RTX 3090, both with Flash Attention enabled](glm_vs_qwen_comparison.png)
+
+*Generation speed across the full 96K context window. GLM-4.7-Flash (~124 t/s on fresh context, MoE 30B with ~3B active per token) is 2.3-3.4× faster than Qwen3.5-27B (~36 t/s fresh, dense 27B) at every context depth, but its degradation curve is steeper — Amdahl's Law (see Architecture Comparison below).*
+
 ---
 
 ## Test Configuration

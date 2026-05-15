@@ -15,6 +15,10 @@ newer crash path (#21383).
 
 **Result: ~3.5× flatter degradation curve (3.37× canary, 3.68× production-validated). 28.2 t/s at 84K context vs ~11.3 t/s without FA.**
 
+![Flash Attention ON vs OFF: generation speed vs context depth on Qwen3.5-27B, dual RTX 3090](flash_attention_comparison.png)
+
+*Generation speed (tokens/second) vs context depth, with Flash Attention enabled vs disabled. With FA on, the degradation curve flattens 3.5× — the model still runs at ~28.6 t/s at 84K context, where the FA-off baseline collapses to ~11 t/s. The full 96K context window stays usable for agentic work.*
+
 ---
 
 ## Test Configuration

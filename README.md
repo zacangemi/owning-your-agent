@@ -11,6 +11,10 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 **Where this stack falls short:** [`LIMITATIONS.md`](LIMITATIONS.md).
 **How to reproduce:** [`METHODOLOGY.md`](METHODOLOGY.md).
 
+![GLM-4.7-Flash vs Qwen3.5-27B: generation speed vs context depth on dual RTX 3090](benchmarks/glm_vs_qwen_comparison.png)
+
+*GLM-4.7-Flash vs Qwen3.5-27B on the same dual RTX 3090 rig — full 96K context window, Flash Attention enabled. GLM is 2.3-3.4× faster across every context depth in our measurements. Full breakdown: [`benchmarks/glm_vs_qwen.md`](benchmarks/glm_vs_qwen.md).*
+
 ---
 
 ## The hardware envelope — three real paths
