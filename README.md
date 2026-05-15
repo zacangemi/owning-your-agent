@@ -7,7 +7,7 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 - **Hardware envelope:** dual RTX 3090, $4,282 total rig.
 
 **Narrative writeup:** [blog post on blog.zacharycangemi.com](https://blog.zacharycangemi.com).
-**Full decision reasoning:** [`DECISIONS.md`](DECISIONS.md) — 34 decisions, ~5-minute scan.
+**Full decision reasoning:** [`DECISIONS.md`](DECISIONS.md) — 32 decisions, ~5-minute scan.
 **Where this stack falls short:** [`LIMITATIONS.md`](LIMITATIONS.md).
 **How to reproduce:** [`METHODOLOGY.md`](METHODOLOGY.md).
 
@@ -31,7 +31,7 @@ The two-model split in the dual-3090 path isn't redundancy — it's a deliberate
 
 ```
 .
-├── DECISIONS.md              — 34 technical decisions + one-line reasoning each
+├── DECISIONS.md              — 32 technical decisions + one-line reasoning each
 ├── LIMITATIONS.md            — where this stack falls short of frontier products
 ├── METHODOLOGY.md            — how to reproduce the benchmarks
 ├── benchmarks/
