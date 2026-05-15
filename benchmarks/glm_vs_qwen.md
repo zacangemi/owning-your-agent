@@ -297,14 +297,10 @@ auditable thinking traces provide higher reliability.
    was mixed conversation + analysis. Direct token efficiency comparison is not valid without
    controlled identical workloads.
 
-2. **Hermes config showed "Qwen3.5-27B"** during the GLM test because the model name is
-   hardcoded in config.yaml. The server was confirmed running GLM via `/v1/models` endpoint
-   and server startup logs. Speed data (97-124 t/s vs 34 t/s) conclusively confirms GLM.
-
-3. **Both models tested on llama.cpp b8720** for experimental consistency. Latest stable is
+2. **Both models tested on llama.cpp b8720** for experimental consistency. Latest stable is
    b8831 (77 releases ahead) with 5-7% MoE speedup and VRAM leak fix. Post-experiment
    update is recommended.
 
-4. **GLM's "Gated Delta Net" kernel activation** was observed in server logs despite GLM not
+3. **GLM's "Gated Delta Net" kernel activation** was observed in server logs despite GLM not
    being a DeltaNet model. This appears to be llama.cpp enabling a generic optimization path
    for the deepseek2 architecture, not an indication of recurrent state.
