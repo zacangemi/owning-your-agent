@@ -46,7 +46,7 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 |---|---|---|
 | Qwen3-Coder-Next 80B | Tested in Phase 1 (synthetic ToolCall-15): 77% | Large model's strong priors caused tool *avoidance* (the model "knows" the answer and skips the tools), and MoE routing diluted the tool-call signal further. Bigger ≠ better for agentic work. Eliminated after Phase 1. |
 | Qwen3-Coder-30B-A3B | Tested in our prior OpenCode validation: 62 t/s, 100% on 16 basic tool calls, junior-mid code quality | Maintainer-confirmed too weak for harder Hermes-class agentic workloads. Small Coder models default to curl/Python fallbacks under tool-call pressure. Wouldn't have come close to Qwen3.5-27B's 97% or GLM-4.7-Flash's 93% on ToolCall-15-class benchmarks. |
-| Qwen3.5-27B FP8 on vLLM | Tested fully on ToolCall-15: 100% at temp=0 | Same model as our production primary, but 15.5 t/s vs 28.5 t/s on llama.cpp UD-Q5_K_XL — 1.8× slower, plus WSL2 + SSH tunnel + tmux infrastructure complexity. Ruled out for production. See engine row 7 for the full vLLM-vs-llama.cpp story. |
+| Qwen3.5-27B FP8 on vLLM | Tested fully on ToolCall-15: 100% at temp=0 | Same model as our production-quality choice, but 15.5 t/s vs 28.5 t/s on llama.cpp UD-Q5_K_XL — 1.8× slower, plus WSL2 + SSH tunnel + tmux infrastructure complexity. Ruled out for production. See engine row 7 for the full vLLM-vs-llama.cpp story. |
 
 ## Inference Engine
 
@@ -63,7 +63,7 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 |---|---|---|---|
 | 10 | Model quantization | Unsloth Dynamic Q5_K_XL | UD preserves router (f32) and attention precision; only FFN compressed — exactly where tool calling needs precision |
 | 11 | Why not Q8_0 | (alternative considered) | Q8 99.9% vs UD-Q5 99.4% of BF16 — unmeasurable gap; UD-Q5 saves 9.5 GB of VRAM that we use for context window instead |
-| 12 | Why not UD-Q4_K_XL | (alternative considered) | UD-Q4_K_XL would save another ~4-6 GB and give an estimated 10-15% speed gain — but we didn't need either: UD-Q5_K_XL already fits comfortably with full attention/router precision preserved (UD keeps router at f32 and attention at high precision at every UD level), and our 21+ GB VRAM headroom at 96K context means we don't need the extra room. Q4 is also documented to potentially affect arithmetic and structured-output reliability in some models — not worth the risk on the accuracy daily driver. Note: For single-GPU setups (which we did not test in this experiment), Q4_K_XL is the documented community-recommended quant — the 24 GB VRAM budget makes the more aggressive quantization necessary. |
+| 12 | Why not UD-Q4_K_XL | (alternative considered) | UD-Q4_K_XL would save another ~4-6 GB and give an estimated 10-15% speed gain — but we didn't need either: UD-Q5_K_XL already fits comfortably with full attention/router precision preserved (UD keeps router at f32 and attention at high precision at every UD level), and our 21+ GB VRAM headroom at 96K context means we don't need the extra room. Q4 is also documented to potentially affect arithmetic and structured-output reliability in some models — not worth the risk on the production-quality model. Note: For single-GPU setups (which we did not test in this experiment), Q4_K_XL is the documented community-recommended quant — the 24 GB VRAM budget makes the more aggressive quantization necessary. |
 
 ## KV Cache
 
@@ -79,7 +79,7 @@ We seriously considered models from the Qwen, Hermes-4 / Hermes-4.3, Devstral, M
 | 15 | Flash Attention | Enabled (with safety layers) | 3.5× flatter degradation curve; at 84K context, 28.6 t/s vs 11.0 t/s without FA |
 | 16 | FA safety layers | f16 KV + `LLAMA_ATTN_ROT_DISABLE=1` + `-sm layer` | Mitigates open issue #21383 (RTX 3090 + agentic patterns crash path) |
 | 17 | GPU split — Qwen | Both GPUs, layer split | 20.5 GB model doesn't fit on a single 24 GB 3090 |
-| 18 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window for clean swapping between accuracy and speed without changing context budget |
+| 18 | GPU split — GLM | Dual GPU, layer split (`-sm layer --tensor-split 1,1`) | MoE PCIe penalty is small (~10-20% vs 30-50% for dense); accepted in exchange for matching Qwen's 96K context window so switching between the quality and speed models (by restarting with the appropriate launch script) doesn't change the working-space math |
 | 19 | Sampling temperature (Qwen) | temp=0.6 | Qwen-recommended for thinking mode; greedy decoding (temp=0) makes thinking models over-cautious |
 | 20 | Sampling temperature (GLM) | temp=0.7, top-p 1.0, min-p 0.01 | GLM-recommended sampling profile; thinking via deepseek reasoning format |
 | 21 | Context window | 96K (98,304 tokens) | Fits f16 KV cache in VRAM budget. After ~12K Hermes system prompt overhead and the default 85% compaction trigger (~83.5K — see row 22), the working window per session is roughly ~70K tokens before Hermes summarizes middle turns. |

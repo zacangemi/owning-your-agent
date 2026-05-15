@@ -61,8 +61,8 @@ This setup uses **two machines**: an **inference server** (Windows or Linux with
 
 1. **Build llama.cpp from source** (on the inference server) with CUDA support. You want build b8720 or newer for the Qwen3.5 thinking-mode tool-call fix (PR #20970) and the multi-GPU Flash Attention fix (PR #19866). Latest stable is fine.
 2. **Download the GGUF models** from Unsloth's Hugging Face onto the inference server:
-   - [`unsloth/Qwen3.5-27B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-27B-GGUF) — pull `UD-Q5_K_XL` for the dual-GPU primary
-   - [`unsloth/GLM-4.7-Flash-GGUF`](https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF) — pull `UD-Q5_K_XL` for the speed alternative
+   - [`unsloth/Qwen3.5-27B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-27B-GGUF) — pull `UD-Q5_K_XL` for the quality model
+   - [`unsloth/GLM-4.7-Flash-GGUF`](https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF) — pull `UD-Q5_K_XL` for the speed model
 3. **Adjust the `C:\` paths** in `configs/*/launch.bat` to match your install locations (the scripts assume `C:\llama-cpp\` and `C:\models\` — change to wherever you put llama.cpp and your GGUF files).
 4. **Launch the inference server** by running the relevant `.bat` from `configs/`. It listens on port 8000.
 5. **Install the Hermes Agent client app on the Mac** — this is the agent application that connects to your inference server. It is **not** a model; the models stay on the inference server you set up in steps 1-4:

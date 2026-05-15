@@ -24,8 +24,8 @@ This document explains how the benchmarks in `benchmarks/` were run, so a reader
 
 ## Models tested
 
-- Qwen3.5-27B Unsloth UD-Q5_K_XL (primary)
-- GLM-4.7-Flash Unsloth UD-Q5_K_XL (speed alternative)
+- Qwen3.5-27B Unsloth UD-Q5_K_XL (production — quality)
+- GLM-4.7-Flash Unsloth UD-Q5_K_XL (production — speed)
 - Qwen3-Coder-Next 80B Q4_K_XL (eliminated after Phase 1)
 - Qwen3.5-27B FP8 (official Qwen, vLLM reference only)
 

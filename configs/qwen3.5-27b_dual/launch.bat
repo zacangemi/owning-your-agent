@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  Qwen3.5-27B (Unsloth UD-Q5_K_XL) — Hermes Agent Production
+REM  Qwen3.5-27B (Unsloth UD-Q5_K_XL) — Accuracy Heavy Hitter
 REM  Engine: llama.cpp b8720+ (native Windows)
 REM  GPU:    2x RTX 3090 (layer split, dual GPU)
 REM  Port:   8000 | Context: 96K | KV cache: f16
