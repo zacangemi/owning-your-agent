@@ -1,6 +1,7 @@
 # GLM-4.7-Flash vs Qwen3.5-27B — Model Comparison Results
-## Flash Attention ON | 2x RTX 3090 | llama.cpp b8720 | Hermes Agent
-## Dates: Qwen validated 2026-04-13 | GLM tested 2026-04-17
+
+*Flash Attention ON · 2× RTX 3090 · llama.cpp b8720 · Hermes Agent*
+*Qwen validated 2026-04-13 · GLM tested 2026-04-17*
 
 ---
 
@@ -72,8 +73,8 @@ between the models — it's just more visible when the baseline is fast.
 
 | Resource | Qwen3.5-27B | GLM-4.7-Flash |
 |----------|------------|---------------|
-| CUDA0 model buffer | 8,820 MiB | 10,267 MiB |
-| CUDA1 model buffer | 9,573 MiB | 10,205 MiB |
+| GPU0 model buffer | 8,820 MiB | 10,267 MiB |
+| GPU1 model buffer | 9,573 MiB | 10,205 MiB |
 | CPU mapped | 834 MiB | 208 MiB |
 | KV cache total | 6,144 MiB (K + V) | 5,076 MiB (K only, V-less) |
 | Recurrent state | 150 MiB | None |
@@ -277,9 +278,6 @@ improvement makes the agent feel alive rather than sluggish.
 (complex multi-step chains, data integrity across tool calls), Qwen's 97% score and
 auditable thinking traces provide higher reliability.
 
-**Hermes `/model` switching** enables using both: GLM as the fast daily driver, Qwen as
-the careful fallback. Both models share the same hardware, same port, same Hermes config.
-
 ---
 
 ## Files
@@ -303,14 +301,10 @@ the careful fallback. Both models share the same hardware, same port, same Herme
    hardcoded in config.yaml. The server was confirmed running GLM via `/v1/models` endpoint
    and server startup logs. Speed data (97-124 t/s vs 34 t/s) conclusively confirms GLM.
 
-3. **GLM identity confusion**: When asked "What model are you?", GLM responded "Qwen3.5-27B"
-   because it reads the model name from Hermes memory/system prompt. This is cosmetic — the
-   model has no reliable self-identification mechanism.
-
-4. **Both models tested on llama.cpp b8720** for experimental consistency. Latest stable is
+3. **Both models tested on llama.cpp b8720** for experimental consistency. Latest stable is
    b8831 (77 releases ahead) with 5-7% MoE speedup and VRAM leak fix. Post-experiment
    update is recommended.
 
-5. **GLM's "Gated Delta Net" kernel activation** was observed in server logs despite GLM not
+4. **GLM's "Gated Delta Net" kernel activation** was observed in server logs despite GLM not
    being a DeltaNet model. This appears to be llama.cpp enabling a generic optimization path
    for the deepseek2 architecture, not an indication of recurrent state.
