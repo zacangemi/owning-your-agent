@@ -1,6 +1,7 @@
 # Flash Attention Canary Test Results
-## Qwen3.5-27B UD-Q5_K_XL | 2x RTX 3090 | llama.cpp b8720
-## Date: 2026-04-11
+
+*Qwen3.5-27B UD-Q5_K_XL · 2x RTX 3090 · llama.cpp b8720*
+*Date: 2026-04-11*
 
 ---
 
@@ -209,7 +210,7 @@ the layers that scale quadratically with context and dominate the slowdown at hi
 ## Production Validation (2026-04-13)
 
 Full production session test — real Hermes agentic workload from fresh start through
-compaction and post-compaction recovery. Server log: `output_test.txt`
+compaction and post-compaction recovery.
 
 ### Session Summary
 - **54 server tasks**: 50 completed with timing data, 4 canceled

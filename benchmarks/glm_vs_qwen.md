@@ -1,6 +1,6 @@
 # GLM-4.7-Flash vs Qwen3.5-27B — Model Comparison Results
 
-*Flash Attention ON · 2× RTX 3090 · llama.cpp b8720 · Hermes Agent*
+*Flash Attention ON · 2x RTX 3090 · llama.cpp b8720 · Hermes Agent*
 *Qwen validated 2026-04-13 · GLM tested 2026-04-17*
 
 ---

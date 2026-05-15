@@ -22,7 +22,7 @@ Read time: ~5 minutes.
 
 | # | Decision | Choice | Why (one line) |
 |---|---|---|---|
-| 4 | Primary model (accuracy) | Qwen3.5-27B (Unsloth UD-Q5_K_XL) | 100% ToolCall-15 at temp 0.6; thinking traces act as a built-in planning layer |
+| 4 | Primary model (accuracy) | Qwen3.5-27B (Unsloth UD-Q5_K_XL) | 97% ToolCall-15 at temp 0 (benchmark default) / 100% at temp 0.6 (Qwen-recommended for thinking mode); thinking traces act as a built-in planning layer |
 | 5 | Speed model (alternative) | GLM-4.7-Flash (Unsloth UD-Q5_K_XL) | 2.3–3.4× faster than Qwen; 93% ToolCall-15; no reprocessing bug (pure MLA attention) |
 | 6 | Why Qwen3-Coder-Next 80B was ruled out | (eliminated) | 77% on ToolCall-15 vs Qwen3.5-27B's 97% — large model's strong priors caused tool *avoidance* (the model "knows" the answer and skips the tools), and MoE routing diluted the tool-call signal further. Bigger ≠ better for agentic work. |
 | 7 | Why Claude-distilled fine-tunes were ruled out | (eliminated) | Hobbyist Claude-distilled models on HuggingFace (e.g., Jackrong's Qwen3.5-Claude-4.6-Opus-Reasoning-Distilled series) are fine-tunes of base Qwen/Llama on Claude reasoning outputs — optimized for reasoning *brevity* (shorter CoT chains), not for tool calling. For agentic work, the base Qwen3.5-27B preserves the careful step-by-step tool-call reasoning the model was originally trained for. **Important distinction:** these hobbyist fine-tunes ≠ full lab-distillation pipelines (Z.ai's GLM family, Moonshot's Kimi K2, DeepSeek's training process), which use teacher-student training plus serious RLHF/RLAIF and produce competitive frontier-grade models. We avoided the hobbyist variants on consumer hardware. |
@@ -113,7 +113,7 @@ A few decisions were considered and either deferred, untested, or determined not
 
 - **Native Linux on Threadripper** — would eliminate most vLLM penalties (no WSL2, no WDDM tax, native FP8 paths). Future build.
 - **Speculative decoding** — not supported for Qwen3.5's hybrid DeltaNet architecture.
-- **Single-GPU Qwen3.5 (Q4 + q8_0 KV)** — would save the second GPU for other work, but tight VRAM headroom and increased risk for marginal performance gain.
+- **Single-GPU Qwen3.5 (Q4 + q8_0 KV)** — would save the second GPU for other work. Out of scope for this experiment, on the roadmap as a follow-up. Documented community pattern (e.g., @sudoingX); not directly verified by us.
 
 ---
 

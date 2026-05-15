@@ -23,7 +23,7 @@ A local agentic coding stack on dual RTX 3090s. [Hermes Agent](https://github.co
 
 A note on the single-3090 path: a single-RTX-3090 setup is a documented community pattern (e.g., @sudoingX runs Qwen3.5 on single 3090s), but **we did not directly verify the single-3090 configuration in this experiment**. We focused on the dual-3090 setup because it gave us 96K context and the headroom to evaluate Qwen and GLM side-by-side. A dedicated single-3090 writeup is on the roadmap as a follow-up project.
 
-The two-model split in the dual-3090 path isn't redundancy — it's a deliberate two-model setup. **GLM-4.7-Flash is dramatically faster** because it's MoE: only ~3B parameters are active per token (out of ~30B total) vs Qwen's full 27B-dense activation. That's a ~9× reduction in fixed per-token compute, which is why GLM hits ~124 t/s on fresh context and Qwen tops out around ~36 t/s. **GLM also degrades faster with context depth** — Amdahl's Law: once the per-token compute is cheap, the context-dependent cost (attention, KV cache reads, memory traffic) becomes a larger proportion of total work sooner. Net result across the full 96K window: GLM is 2.3–3.4× faster than Qwen at every context depth, but the gap narrows as context fills. **We use Qwen for accuracy-critical work** where its `<think>` traces and 5.9× flatter degradation curve matter; **GLM for daily speed** where the 7-point tool-call accuracy gap (97% vs 93%) doesn't show up in normal use. Hermes supports live `/model` swapping in a session, but we typically restart sessions with the appropriate model — same 96K context budget across both models means the working-space math stays consistent either way.
+The two-model split in the dual-3090 path isn't redundancy — it's a deliberate two-model setup. **GLM-4.7-Flash is dramatically faster** because it's MoE: only ~3B parameters are active per token (out of ~30B total) vs Qwen's full 27B-dense activation. That's a ~9× reduction in fixed per-token compute, which is why GLM hits ~124 t/s on fresh context and Qwen tops out around ~36 t/s. **GLM also degrades faster with context depth** — Amdahl's Law: once the per-token compute is cheap, the context-dependent cost (attention, KV cache reads, memory traffic) becomes a larger proportion of total work sooner. Net result across the full 96K window: GLM is 2.3–3.4× faster than Qwen at every context depth, but the gap narrows as context fills. **GLM-4.7-Flash is the speed driver in our setup** — its 2.3–3.4× advantage makes the agent feel responsive in extended sessions, and 93% ToolCall-15 accuracy handles most agentic work. **Qwen3.5-27B is the heavy hitter for accuracy-critical work** — slower, but its `<think>` traces, 5.9× flatter degradation curve, and 97% tool-call accuracy buy reliability when output quality matters more than turn-around time. Both models share the same 96K context budget, so picking between them per task — by restarting the inference server with the appropriate launch script — keeps the working-space math consistent across either choice.
 
 ---
 
@@ -40,8 +40,8 @@ The two-model split in the dual-3090 path isn't redundancy — it's a deliberate
 │   ├── flash_attention_comparison.png
 │   └── glm_vs_qwen_comparison.png
 ├── configs/
-│   ├── qwen3.5-27b_dual/launch.bat     — primary accuracy daily driver
-│   ├── glm-4.7-flash/launch.bat        — speed alternative
+│   ├── qwen3.5-27b_dual/launch.bat     — accuracy heavy hitter
+│   ├── glm-4.7-flash/launch.bat        — speed daily driver
 │   └── hermes/
 │       ├── SOUL.md           — Karpathy-style agent identity (shape thinking, not tools)
 │       ├── config.yaml       — Hermes config template
