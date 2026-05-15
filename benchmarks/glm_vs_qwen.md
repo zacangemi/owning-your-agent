@@ -91,9 +91,11 @@ larger (more expert parameters) but KV cache is smaller (MLA V-less optimization
 ### Fitted Curves
 
 ```
-GLM-4.7-Flash:  t/s = 101.95 - 0.445 * K
+GLM-4.7-Flash:  t/s = 101.95 - 0.445 * K    (R² = 0.979)
 Qwen3.5-27B:    t/s =  35.12 - 0.076 * K    (R² = 0.995)
 ```
+
+Both regressions are fit on prompts with context ≥ 10K tokens. The early fresh-context burst points (where speed is dominated by warmup and cache effects rather than steady-state inference) are excluded from the fit on both curves, so the R² values are directly comparable.
 
 ### Speed Comparison Table
 
@@ -159,9 +161,9 @@ GLM has pure MLA attention on all 47 layers — no recurrent state, no checkpoin
 invalidation issue. Zero forced reprocessing events in the entire session.
 
 **However**, GLM still has expensive cold prefills when Hermes changes prompt branches
-(e.g., compaction). Task 4097 processed 92,257 tokens from scratch in 117.6 seconds.
-The difference: Qwen's reprocessing is forced by architecture; GLM's is caused by
-Hermes branch changes (operational, not architectural).
+(e.g., compaction). One observed cold prefill processed 92,257 tokens from scratch in
+117.6 seconds. The difference: Qwen's reprocessing is forced by architecture; GLM's is
+caused by Hermes branch changes (operational, not architectural).
 
 ### GLM Compaction Noise
 
@@ -277,17 +279,6 @@ improvement makes the agent feel alive rather than sluggish.
 **Qwen3.5-27B for quality-critical tasks** — when tool call accuracy is paramount
 (complex multi-step chains, data integrity across tool calls), Qwen's 97% score and
 auditable thinking traces provide higher reliability.
-
----
-
-## Files
-
-- **Chart**: `glm_vs_qwen_comparison.png`
-- **GLM server log**: `testing_output/glm_flash_llama_full.txt`
-- **GLM Hermes output**: `testing_output/glm_flash_hermes_full.txt`
-- **Qwen server log**: `output_test.txt`
-- **Qwen FA results**: `flash_attention_canary_results_2026-04-11.md`
-- **Chart source**: `glm_vs_qwen_chart.py`
 
 ---
 
